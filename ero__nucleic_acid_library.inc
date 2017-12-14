@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @class
  * Purpose:
@@ -36,16 +37,16 @@ class ero__nucleic_acid_library extends ChadoField {
   // Drupal will automatically change these settings for all fields.
   // Once instances exist for a field type then these settings cannot be
   // changed.
-  public static $default_settings = array(
+  public static $default_settings = [
     'storage' => 'field_chado_storage',
-     // It is expected that all fields set a 'value' in the load() function.
-     // In many cases, the value may be an associative array of key/value pairs.
-     // In order for Tripal to provide context for all data, the keys should
-     // be a controlled vocabulary term (e.g. rdfs:type). Keys in the load()
-     // function that are supported by the query() function should be
-     // listed here.
-     'searchable_keys' => array(),
-  );
+    // It is expected that all fields set a 'value' in the load() function.
+    // In many cases, the value may be an associative array of key/value pairs.
+    // In order for Tripal to provide context for all data, the keys should
+    // be a controlled vocabulary term (e.g. rdfs:type). Keys in the load()
+    // function that are supported by the query() function should be
+    // listed here.
+    'searchable_keys' => [],
+  ];
 
   // Provide a list of instance specific settings. These can be access within
   // the instanceSettingsForm.  When the instanceSettingsForm is submitted
@@ -54,7 +55,7 @@ class ero__nucleic_acid_library extends ChadoField {
   // If you override this variable in a child class be sure to replicate the
   // term_name, term_vocab, term_accession and term_fixed keys as these are
   // required for all TripalFields.
-  public static $default_instance_settings = array(
+  public static $default_instance_settings = [
     // The DATABASE name, as it appears in chado.db.  This also builds the link-out url.  In most cases this will simply be the CV name.  In some cases (EDAM) this will be the SUBONTOLOGY.
     'term_vocabulary' => 'ERO',
     // The name of the term.
@@ -69,7 +70,7 @@ class ero__nucleic_acid_library extends ChadoField {
     // is convenient for speed.  Fields that are slow should for loading
     // should have auto_attach set to FALSE so tha their values can be
     // attached asynchronously.
-  );
+  ];
 
   // A boolean specifying that users should not be allowed to create
   // fields and instances of this field type through the UI. Such
@@ -83,7 +84,7 @@ class ero__nucleic_acid_library extends ChadoField {
   // the user but otherwise provides no data.
   public static $no_data = FALSE;
 
- /**
+  /**
    * Loads the field values from the underlying data store.
    *
    * @param $entity
@@ -118,19 +119,43 @@ class ero__nucleic_acid_library extends ChadoField {
     // additional data to be used in the display, you should add it here.
     parent::load($entity);
 
-    //get bundle info
-$organism_id = 10;
-    //load library info for this bundle
+    if ($entity->chado_table == 'organism') {
+      $field_name = $this->field['field_name'];
+      $organism = $entity->chado_record;
+      $organism_id = $organism->organism_id;
 
+      //load library info for this bundle
+      $options = [];
 
-$values = array(
-    'organism_id' => $organism_id,
-  );
-  $columns = array('library_id', 'name', 'unique_name', 'type_id', 'is_obsolute');
- 
-  $results = chado_select_record('library', $columns, $values, $options);
+      $values = [
+        'organism_id' => $organism_id,
+      ];
+      $columns = ['library_id', 'name', 'uniquename', 'type_id', 'is_obsolete'];
 
-  //set the results into the field
+      $results = chado_select_record('library', $columns, $values, $options);
 
+      //go through the results and lookup the entity id of each
+      $output = [];
+      foreach ($results as $result) {
+
+        $library_id = $result->library_id;
+
+        $entity_id = tripal_get_chado_entity_id("library", $library_id);
+
+        //convert type into the cvterm value
+        $library_type = tripal_get_cvterm(["cvterm_id" => $result->type_id]);
+
+        $output[] = [
+          "entity_id" => $entity_id,
+          "name" => $result->name,
+          "is_obsolete" => $result->is_obsolete,
+          "type_id" => $result->type_id,
+          "library_type" => $library_type->name
+        ];
+      }
+      $entity->{$field_name}['und'][0]['value'] = $entity_id;
+      $entity->{$field_name}['und'][0]['info'] = $output;
+
+    }
   }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @class
  * Purpose:
@@ -12,12 +13,12 @@ class ero__nucleic_acid_library_formatter extends ChadoFieldFormatter {
   public static $default_label = 'Libraries';
 
   // The list of field types for which this formatter is appropriate.
-  public static $field_types = array('ero__nucleic_acid_library');
+  public static $field_types = ['ero__nucleic_acid_library'];
 
   // The list of default settings for this formatter.
-  public static $default_settings = array(
+  public static $default_settings = [
     'setting1' => 'default_value',
-  );
+  ];
 
   /**
    * Provides the field's setting form.
@@ -68,22 +69,53 @@ class ero__nucleic_acid_library_formatter extends ChadoFieldFormatter {
    *  into a CSV file will always be identical.  The view need not show all
    *  of the data in the 'values' array.
    *
-   *  @param $element
-   *  @param $entity_type
-   *  @param $entity
-   *  @param $langcode
-   *  @param $items
-   *  @param $display
+   * @param $element
+   * @param $entity_type
+   * @param $entity
+   * @param $langcode
+   * @param $items
+   * @param $display
    *
-   *  @return
+   * @return
    *    An element array compatible with that returned by the
    *    hook_field_formatter_view() function.
    */
   public function view(&$element, $entity_type, $entity, $langcode, $items, $display) {
 
     //build a table of the libraries associated with this organism
-    
+
+
+    if (!$items) {
+      return NULL;
+    }
+    $rows = [];
+    $header = ["Name", "Type", "Status"];
+
+    foreach ($items as $item) {
+      $library = $item["info"][0];
+
+      $obsolete = "current";
+
+      if ($library["is_obsolete"]) {
+        $obsolete = "obsolete";
+      }
+      $link = l($library["name"], "/bio_data/" . $library["entity_id"]);
+
+      $value = [$link, $library["library_type"], $obsolete];
+      $rows[] = $value;
+    }
+
+    $output = theme('table', [
+      'header' => $header,
+      'rows' => $rows,
+    ]);
+
+    $element[] = [
+      '#markup' => $output,
+    ];
+
   }
+
 
   /**
    * Provides a summary of the formatter settings.
