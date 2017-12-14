@@ -3,3 +3,7 @@
 This is a Tripal 3 field for displaying Library information on an organism bundle.  
 
 It will simply display a table of all chado.library items (which are now multiple bundle types) linking to those bundles.
+
+# Installation
+
+This is not a module.  It is a standalone field designed to be enabled as a library.  Clone the field into your `sites/all/libraries` directory and enable the libraries API module.
